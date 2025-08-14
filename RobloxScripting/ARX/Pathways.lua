@@ -1,29 +1,29 @@
--- selectway gui thing
+-- Path Select GUI Script
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local plr = Players.LocalPlayer
-local gui = plr:WaitForChild("PlayerGui")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-local remote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Units"):WaitForChild("SelectWay")
+local selectWayRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Units"):WaitForChild("SelectWay")
 
-local sel = nil
-local running = false
-local autoloop
-local cycling = false
-local cycleloop
+local selectedPath = nil
+local isAutoRunning = false
+local autoLoop
+local isCycling = false
+local cycleLoop
 
 -- Create main GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SelectWayGUI"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = gui
+screenGui.Parent = playerGui
 
 -- Main frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 200, 0, 185)
+mainFrame.Size = UDim2.new(0, 200, 0, 220)
 mainFrame.Position = UDim2.new(0, 50, 0, 50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderSizePixel = 0
@@ -87,25 +87,23 @@ buttonsFrame.BackgroundTransparency = 1
 buttonsFrame.Parent = mainFrame
 
 -- Create selection buttons (1-4)
-local buttons = {}
+local pathButtons = {}
 for i = 1, 4 do
-    local button = Instance.new("TextButton")
-    button.Name = "Button" .. i
-    button.Size = UDim2.new(0, 40, 0, 35)
-    button.Position = UDim2.new(0, (i-1) * 45, 0, 0)
-    button.BackgroundColor3 = i == sel and Color3.fromRGB(85, 170, 85) or Color3.fromRGB(85, 85, 85)
-    button.BorderSizePixel = 0
-    button.Text = tostring(i)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextScaled = true
-    button.Font = Enum.Font.SourceSansBold
-    button.Parent = buttonsFrame
-    
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 6)
-    buttonCorner.Parent = button
-    
-    buttons[i] = button
+    local btn = Instance.new("TextButton")
+    btn.Name = "Button" .. i
+    btn.Size = UDim2.new(0, 40, 0, 35)
+    btn.Position = UDim2.new(0, (i-1) * 45, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(85, 85, 85)
+    btn.BorderSizePixel = 0
+    btn.Text = tostring(i)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextScaled = true
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = buttonsFrame
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+    pathButtons[i] = btn
 end
 
 -- Status label
@@ -150,95 +148,142 @@ cycleButton.TextScaled = true
 cycleButton.Font = Enum.Font.SourceSansBold
 cycleButton.Parent = mainFrame
 
-local cycleCorner = Instance.new("UICorner")
-cycleCorner.CornerRadius = UDim.new(0, 6)
-cycleCorner.Parent = cycleButton
 
-local function updateColors()
+local speedButton = Instance.new("TextButton")
+speedButton.Name = "SpeedButton"
+speedButton.Size = UDim2.new(1, -20, 0, 25)
+speedButton.Position = UDim2.new(0, 10, 0, 180)
+speedButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+speedButton.BorderSizePixel = 0
+speedButton.Text = "SPEED: OFF"
+speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedButton.TextScaled = true
+speedButton.Font = Enum.Font.SourceSansBold
+speedButton.Parent = mainFrame
+
+local speedCorner = Instance.new("UICorner")
+speedCorner.CornerRadius = UDim.new(0, 6)
+speedCorner.Parent = speedButton
+
+local speedRunning = false
+local speedLoop
+local function has3xGamepass()
+    local plrName = Players.LocalPlayer.Name
+    local data = game:GetService("ReplicatedStorage").Player_Data:FindFirstChild(plrName)
+    if data and data:FindFirstChild("Gamepass") and data.Gamepass:FindFirstChild("3x Game Speed") then
+        return data.Gamepass["3x Game Speed"].Value == true
+    end
+    return false
+end
+
+local function setSpeed(speed)
+    local args = {speed}
+    game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("SpeedGamepass"):FireServer(unpack(args))
+    print("Tried to set speed to:", speed)
+end
+
+local function startSpeed()
+    speedRunning = true
+    speedButton.Text = "SPEED: ON"
+    speedButton.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+    speedLoop = task.spawn(function()
+        while speedRunning do
+            if has3xGamepass() then
+                setSpeed(3)
+            else
+                setSpeed(2)
+            end
+            task.wait(1)
+        end
+    end)
+end
+
+local function stopSpeed()
+    speedRunning = false
+    if speedLoop then
+        task.cancel(speedLoop)
+        speedLoop = nil
+    end
+    speedButton.Text = "SPEED: OFF"
+    speedButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+end
+speedButton.MouseButton1Click:Connect(function()
+    if speedRunning then
+        stopSpeed()
+    else
+        startSpeed()
+    end
+end)
+
+local function updatePathButtonColors()
     for i = 1, 4 do
-        if sel == i then
-            buttons[i].BackgroundColor3 = Color3.fromRGB(85, 170, 85)
+        if selectedPath == i then
+            pathButtons[i].BackgroundColor3 = Color3.fromRGB(85, 170, 85)
         else
-            buttons[i].BackgroundColor3 = Color3.fromRGB(85, 85, 85)
+            pathButtons[i].BackgroundColor3 = Color3.fromRGB(85, 85, 85)
         end
     end
 end
 
 local function updateStatus()
-    local selText = sel and tostring(sel) or "None"
-    statusLabel.Text = "Selected: " .. selText .. " | Status: " .. (running and "Running" or cycling and "Cycling" or "Stopped")
+    local selText = selectedPath and tostring(selectedPath) or "None"
+    local status = isAutoRunning and "Running" or isCycling and "Cycling" or "Stopped"
+    statusLabel.Text = "Selected: " .. selText .. " | Status: " .. status
 end
 
-local function shoot()
-    if not sel then return end
-    local args = {
-        sel,
-        false
-    }
-    remote:FireServer(unpack(args))
-    print("shot selectway:", sel)
+local function firePathRemote()
+    if not selectedPath then return end
+    local args = { selectedPath, false }
+    selectWayRemote:FireServer(unpack(args))
+    print("Fired path remote:", selectedPath)
 end
 
 local function startAuto()
-    if autoloop then
-        autoloop:Disconnect()
-    end
-    
-    running = true
+    if autoLoop then autoLoop:Disconnect() end
+    isAutoRunning = true
     toggleButton.Text = "STOP AUTO"
     toggleButton.BackgroundColor3 = Color3.fromRGB(255, 85, 85)
     updateStatus()
-    
-    shoot()
-    
-    autoloop = task.spawn(function()
-        while running do
+    firePathRemote()
+    autoLoop = task.spawn(function()
+        while isAutoRunning do
             task.wait(2)
-            if running then
-                shoot()
+            if isAutoRunning then
+                firePathRemote()
             end
         end
     end)
 end
 
 local function stopAuto()
-    running = false
-    if autoloop then
-        task.cancel(autoloop)
-        autoloop = nil
+    isAutoRunning = false
+    if autoLoop then
+        task.cancel(autoLoop)
+        autoLoop = nil
     end
-    
     toggleButton.Text = "START AUTO"
     toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85)
     updateStatus()
 end
 
 local function doCycle()
-    if running then
-        stopAuto()
-    end
-    
-    if cycleloop then
-        task.cancel(cycleloop)
-    end
-    
-    cycling = true
+    if isAutoRunning then stopAuto() end
+    if cycleLoop then task.cancel(cycleLoop) end
+    isCycling = true
     cycleButton.Text = "STOP CYCLE"
     cycleButton.BackgroundColor3 = Color3.fromRGB(170, 85, 170)
     updateStatus()
-    
-    cycleloop = task.spawn(function()
+    cycleLoop = task.spawn(function()
         local idx = 1
-        while cycling do
-            sel = idx
-            updateColors()
+        while isCycling do
+            selectedPath = idx
+            updatePathButtonColors()
             updateStatus()
-            shoot()
-            
+            firePathRemote()
             -- rainbow colors
             local cols = {
                 Color3.fromRGB(255, 85, 85),
-                Color3.fromRGB(255, 170, 85), 
+                Color3.fromRGB(255, 170, 85),
                 Color3.fromRGB(255, 255, 85),
                 Color3.fromRGB(85, 255, 85),
                 Color3.fromRGB(85, 255, 255),
@@ -246,8 +291,7 @@ local function doCycle()
                 Color3.fromRGB(170, 85, 255),
                 Color3.fromRGB(255, 85, 170)
             }
-            
-            if cycling then
+            if isCycling then
                 local colIdx = ((idx - 1) % #cols) + 1
                 local tween = TweenService:Create(
                     cycleButton,
@@ -255,16 +299,14 @@ local function doCycle()
                     {BackgroundColor3 = cols[colIdx]}
                 )
                 tween:Play()
-                
                 local pulse = TweenService:Create(
                     cycleButton,
                     TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                     {Size = UDim2.new(1, -15, 0, 30)}
                 )
                 pulse:Play()
-                
                 pulse.Completed:Connect(function()
-                    if cycling then
+                    if isCycling then
                         local back = TweenService:Create(
                             cycleButton,
                             TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -274,23 +316,19 @@ local function doCycle()
                     end
                 end)
             end
-            
-            print("cycle:", sel)
-            
+            print("cycle:", selectedPath)
             idx = (idx % 4) + 1
-            
             task.wait(1)
         end
     end)
 end
 
 local function stopCycle()
-    cycling = false
-    if cycleloop then
-        task.cancel(cycleloop)
-        cycleloop = nil
+    isCycling = false
+    if cycleLoop then
+        task.cancel(cycleLoop)
+        cycleLoop = nil
     end
-    
     cycleButton.Text = "START CYCLE"
     cycleButton.BackgroundColor3 = Color3.fromRGB(85, 85, 170)
     cycleButton.Size = UDim2.new(1, -20, 0, 25)
@@ -307,23 +345,21 @@ cycleButton.MouseButton1Click:Connect(function()
 end)
 
 for i = 1, 4 do
-    buttons[i].MouseButton1Click:Connect(function()
-        if cycling then
-            stopCycle()
-        end
-        if sel == i then
-            sel = nil
+    pathButtons[i].MouseButton1Click:Connect(function()
+        if isCycling then stopCycle() end
+        if selectedPath == i then
+            selectedPath = nil
         else
-            sel = i
+            selectedPath = i
         end
-        updateColors()
+        updatePathButtonColors()
         updateStatus()
-        print("picked:", sel)
+        print("picked:", selectedPath)
     end)
 end
 
 toggleButton.MouseButton1Click:Connect(function()
-    if running then
+    if isAutoRunning then
         stopAuto()
     else
         startAuto()
