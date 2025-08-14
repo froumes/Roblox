@@ -20,8 +20,8 @@ screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 400, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 400, 0, 448)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -224)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 32, 45)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -38,6 +38,73 @@ notifLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 notifLabel.TextScaled = true
 notifLabel.Font = Enum.Font.GothamBold
 notifLabel.Parent = mainFrame
+
+-- Fast Retry Button
+local fastRetryOn = false
+local fastRetryThread = nil
+local retryButton = Instance.new("TextButton")
+retryButton.Size = UDim2.new(0, 120, 0, 32)
+retryButton.Position = UDim2.new(1, -132, 1, -40)
+retryButton.AnchorPoint = Vector2.new(0, 0)
+retryButton.BackgroundColor3 = Color3.fromRGB(120, 120, 200)
+retryButton.Text = "Fast Retry: OFF"
+retryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+retryButton.TextScaled = true
+retryButton.Font = Enum.Font.GothamBold
+retryButton.ZIndex = 3
+retryButton.Parent = mainFrame
+local retryCorner = Instance.new("UICorner")
+retryCorner.CornerRadius = UDim.new(0, 8)
+retryCorner.Parent = retryButton
+
+local function setRetryButtonState(on)
+    fastRetryOn = on
+    if on then
+        retryButton.Text = "Fast Retry: ON"
+        retryButton.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
+    else
+        retryButton.Text = "Fast Retry: OFF"
+        retryButton.BackgroundColor3 = Color3.fromRGB(120, 120, 200)
+    end
+end
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local voteRetryRemote = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("OnGame"):WaitForChild("Voting"):WaitForChild("VoteRetry")
+
+local function startFastRetry()
+    if fastRetryThread then return end
+    fastRetryThread = coroutine.create(function()
+        while fastRetryOn do
+            pcall(function()
+                voteRetryRemote:FireServer()
+            end)
+            task.wait(0.05)
+        end
+        fastRetryThread = nil
+    end)
+    coroutine.resume(fastRetryThread)
+end
+
+local function stopFastRetry()
+    fastRetryOn = false
+    fastRetryThread = nil
+end
+
+retryButton.MouseButton1Click:Connect(function()
+    if not fastRetryOn then
+        setRetryButtonState(true)
+        startFastRetry()
+    else
+        setRetryButtonState(false)
+    end
+end)
+
+-- Stop fast retry if GUI is destroyed
+screenGui.AncestryChanged:Connect(function(_, parent)
+    if not parent then
+        fastRetryOn = false
+    end
+end)
 
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 12)
@@ -61,7 +128,7 @@ title.Font = Enum.Font.GothamBold
 title.Parent = mainFrame
 
 local scrolling = Instance.new("ScrollingFrame")
-scrolling.Size = UDim2.new(1, -24, 1, -70)
+scrolling.Size = UDim2.new(1, -24, 1, -118)
 scrolling.Position = UDim2.new(0, 12, 0, 56)
 scrolling.BackgroundTransparency = 1
 scrolling.BorderSizePixel = 0
