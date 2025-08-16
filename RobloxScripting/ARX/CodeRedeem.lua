@@ -1,4 +1,4 @@
--- Script to redeem all codes in Player_Data.hotwheelergirler.Code
+
 -- Place as a LocalScript or run in an executor
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
