@@ -1,4 +1,9 @@
 -- Better Priority GUI for Unit Upgrades
+-- Auto re-execute on teleport (executor environments)
+if queue_on_teleport and game:GetService("Players").LocalPlayer then
+    local url = "https://raw.githubusercontent.com/froumes/VSC/refs/heads/Roblox/RobloxScripting/ARX/BetterPriority.lua"
+    queue_on_teleport(("loadstring(game:HttpGet('%s'))()") :format(url))
+end
 -- Place this as a LocalScript in StarterPlayerScripts
 
 local Players = game:GetService("Players")
