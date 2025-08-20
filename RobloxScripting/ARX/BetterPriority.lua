@@ -23,6 +23,7 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 
+
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 400, 0, 448)
@@ -33,7 +34,30 @@ mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
+-- Minimize button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 20, 0, 20)
+minimizeButton.Position = UDim2.new(1, -28, 0, 8)
+minimizeButton.AnchorPoint = Vector2.new(0, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+minimizeButton.Text = "_"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.TextStrokeTransparency = 0.5
+minimizeButton.TextStrokeColor3 = Color3.fromRGB(60, 60, 60)
+minimizeButton.TextScaled = true
+minimizeButton.Font = Enum.Font.GothamBlack
+minimizeButton.ZIndex = 30
+minimizeButton.Parent = mainFrame
+local minimizeCorner = Instance.new("UICorner")
+minimizeCorner.CornerRadius = UDim.new(0, 8)
+minimizeCorner.Parent = minimizeButton
+local minimizeStroke = Instance.new("UIStroke")
+minimizeStroke.Thickness = 2
+minimizeStroke.Color = Color3.fromRGB(255, 255, 255)
+minimizeStroke.Parent = minimizeButton
+
 -- Notification label for save errors
+
 local notifLabel = Instance.new("TextLabel")
 notifLabel.Size = UDim2.new(1, 0, 0, 20)
 notifLabel.Position = UDim2.new(0, 0, 1, -20)
@@ -43,6 +67,7 @@ notifLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 notifLabel.TextScaled = true
 notifLabel.Font = Enum.Font.GothamBold
 notifLabel.Parent = mainFrame
+notifLabel.Name = "NotifLabel"
 
 -- Fast Retry Button
 local fastRetryOn = false
@@ -58,6 +83,7 @@ retryButton.TextScaled = true
 retryButton.Font = Enum.Font.GothamBold
 retryButton.ZIndex = 3
 retryButton.Parent = mainFrame
+retryButton.Name = "RetryButton"
 local retryCorner = Instance.new("UICorner")
 retryCorner.CornerRadius = UDim.new(0, 8)
 retryCorner.Parent = retryButton
@@ -140,6 +166,24 @@ scrolling.BorderSizePixel = 0
 scrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
 scrolling.ScrollBarThickness = 8
 scrolling.Parent = mainFrame
+scrolling.Name = "Scrolling"
+-- Minimize logic
+local minimized = false
+local function setMinimized(state)
+    minimized = state
+    scrolling.Visible = not minimized
+    retryButton.Visible = not minimized
+    notifLabel.Visible = not minimized
+    if minimized then
+        mainFrame.Size = UDim2.new(0, 400, 0, 56)
+    else
+        mainFrame.Size = UDim2.new(0, 400, 0, 448)
+    end
+end
+minimizeButton.MouseButton1Click:Connect(function()
+    setMinimized(not minimized)
+end)
+setMinimized(false)
 
 local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0, 10)
