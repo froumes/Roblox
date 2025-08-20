@@ -134,8 +134,9 @@ selectorLabel.ZIndex = 12
 
 
 
+
 local legendLabel = Instance.new("TextLabel")
-legendLabel.Size = UDim2.new(1, -20, 0, 20)
+legendLabel.Size = UDim2.new(1, -120, 0, 20)
 legendLabel.Position = UDim2.new(0, 10, 0, 140)
 legendLabel.BackgroundTransparency = 1
 legendLabel.Text = "Icon 1: Yellow  |  Icon 2: Cyan"
@@ -146,6 +147,52 @@ legendLabel.TextSize = 16
 legendLabel.TextXAlignment = Enum.TextXAlignment.Left
 legendLabel.ZIndex = 14
 legendLabel.Parent = mainFrame
+
+-- Teleport button to the right of the legend
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(0, 130, 0, 20)
+tpButton.Position = UDim2.new(1, -160, 0, 140)
+tpButton.AnchorPoint = Vector2.new(0, 0)
+tpButton.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+tpButton.Text = "Teleport to Curse"
+tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpButton.TextScaled = false
+tpButton.TextSize = 14
+tpButton.Font = Enum.Font.GothamBold
+tpButton.ZIndex = 15
+tpButton.Parent = mainFrame
+local tpCorner = Instance.new("UICorner")
+tpCorner.CornerRadius = UDim.new(0, 8)
+tpCorner.Parent = tpButton
+tpButton.MouseButton1Click:Connect(function()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local target = workspace:FindFirstChild("Lobby")
+    if target and target:FindFirstChild("NPC") and target.NPC:FindFirstChild("ApplyCurse") and root then
+        local applyCurse = target.NPC.ApplyCurse
+        local cf
+        if applyCurse:IsA("BasePart") then
+            cf = applyCurse.CFrame
+        elseif applyCurse:IsA("Model") then
+            if applyCurse.PrimaryPart then
+                cf = applyCurse.PrimaryPart.CFrame
+            else
+                local hrp = applyCurse:FindFirstChild("HumanoidRootPart")
+                if hrp and hrp:IsA("BasePart") then
+                    cf = hrp.CFrame
+                else
+                    local firstPart = applyCurse:FindFirstChildWhichIsA("BasePart")
+                    if firstPart then
+                        cf = firstPart.CFrame
+                    end
+                end
+            end
+        end
+        if cf then
+            root.CFrame = cf + Vector3.new(0, 3, 0)
+        end
+    end
+end)
 
 
 
@@ -647,7 +694,6 @@ end
 
 
 
-while true do
-    pcall(updateCurses)
-    wait(0.1)
-end
+
+-- Initial update
+pcall(updateCurses)
