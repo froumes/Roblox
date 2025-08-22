@@ -226,6 +226,7 @@ local function updateIconSelections()
             btn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
         end
     end
+    if updateCurses then updateCurses() end
 end
 for i, btn in ipairs(iconButtons) do
     btn.MouseButton1Click:Connect(function()
