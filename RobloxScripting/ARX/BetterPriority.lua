@@ -17,9 +17,11 @@ local playerGui = player:WaitForChild("PlayerGui")
 local old = playerGui:FindFirstChild("BetterPriorityGUI")
 if old then old:Destroy() end
 
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "BetterPriorityGUI"
 screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 1000 
 screenGui.Parent = playerGui
 
 
